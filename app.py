@@ -6,6 +6,7 @@ from forensics.hashing import get_image_hash
 import os
 from forensics.database import init_db, check_and_store_hash
 from forensics.hashing import get_image_hash
+from forensics.report import generate_summary
 
 init_db()
 
@@ -79,4 +80,28 @@ if uploaded_file:
     file_path = save_uploaded_file(uploaded_file)
     st.sidebar.success(f"Gespeichert unter: {file_path}")
 
-        
+if st.button("🏁 Analyse abschließen & Zusammenfassen"):
+    status, flags, score = generate_summary(meta, is_unique, "Alles okay") # "Alles okay" ist Platzhalter für KI
+    
+    st.divider()
+    st.header("📋 Abschlussbericht (Step 04 & 05)")
+    
+    col_a, col_b = st.columns([1, 2])
+    
+    with col_a:
+        st.metric("Finaler Score", f"{score}/100")
+    
+    with col_b:
+        st.subheader(f"Status: {status}")
+        if flags:
+            for flag in flags:
+                st.warning(f"Flag: {flag}")
+        else:
+            st.success("Alle Integritätsprüfungen bestanden.")
+
+    # Kleiner Trick für den "ÖBB-Vibe":
+    st.download_button(
+        label="Bericht als TXT exportieren",
+        data=f"Audit Report\nStatus: {status}\nScore: {score}\nGPS: {meta['lat']}, {meta['lon']}",
+        file_name=f"audit_{uploaded_file.name}.txt"
+    )        
